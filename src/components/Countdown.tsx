@@ -1,9 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-
-// September 15, 2026, 00:00:00 local time
-const TARGET_DATE = new Date(2026, 8, 15, 0, 0, 0).getTime();
+import { useEffect, useState, useRef } from "react";
+import confetti from "canvas-confetti";
 
 interface TimeLeft {
   days: number;
@@ -18,15 +16,55 @@ interface CountdownProps {
 
 export function Countdown({ onComplete }: CountdownProps) {
   const [timeLeft, setTimeLeft] = useState<TimeLeft | null>(null);
+  const [targetDate, setTargetDate] = useState<number | null>(null);
+  const hasCompleted = useRef(false);
 
   useEffect(() => {
+    // Exactly 15th Sept 2026, 12:00:00 AM (midnight)
+    setTargetDate(new Date(2026, 8, 15, 0, 0, 0).getTime());
+  }, []);
+
+  useEffect(() => {
+    if (!targetDate || hasCompleted.current) return;
+
     const updateTime = () => {
       const now = new Date().getTime();
-      const difference = TARGET_DATE - now;
+      const difference = targetDate - now;
 
       if (difference <= 0) {
-        setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
-        onComplete();
+        if (!hasCompleted.current) {
+          hasCompleted.current = true;
+          setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+          
+          // Fire confetti for 3 seconds so the user can enjoy the 00s
+          const duration = 3 * 1000;
+          const end = Date.now() + duration;
+
+          const frame = () => {
+            confetti({
+              particleCount: 7,
+              angle: 60,
+              spread: 55,
+              origin: { x: 0 },
+              colors: ['#E50914', '#ffffff', '#facc15', '#ec4899']
+            });
+            confetti({
+              particleCount: 7,
+              angle: 120,
+              spread: 55,
+              origin: { x: 1 },
+              colors: ['#E50914', '#ffffff', '#facc15', '#ec4899']
+            });
+
+            if (Date.now() < end) {
+              requestAnimationFrame(frame);
+            } else {
+              // After confetti finishes, trigger the next stage
+              setTimeout(onComplete, 500);
+            }
+          };
+          frame();
+        }
         return;
       }
 
@@ -41,7 +79,7 @@ export function Countdown({ onComplete }: CountdownProps) {
     updateTime();
     const interval = setInterval(updateTime, 1000);
     return () => clearInterval(interval);
-  }, [onComplete]);
+  }, [targetDate, onComplete]);
 
   if (!timeLeft) return <div className="h-[72px] sm:h-24" />; // prevent layout shift
 
