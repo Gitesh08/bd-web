@@ -186,7 +186,6 @@ export function HritikaCatalog({ profile }: { profile: any }) {
                     delay: { min: 30, max: 60 },
                     friction: 0.95,
                     gravity: 1.5,
-                    shimmer: true,
                   }}
                   style={{ top: 0, left: 0, width: '100%', height: '100%', position: 'absolute' }}
                 />
